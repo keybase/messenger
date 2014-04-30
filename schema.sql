@@ -2,8 +2,7 @@
 
 CREATE TABLE `msg_threads` (
 	thread_id CHAR(32) NOT NULL PRIMARY KEY,       --- at least one for each group of conversants
-	num_conversants INT(11) UNSIGNED NOT NULL,     --- the # of conversants in the conversation
-	write_key CHAR(64) NOT NULL                    --- conversants need to prove knowledge of this key to write
+	num_conversants INT(11) UNSIGNED NOT NULL      --- the # of conversants in the conversation
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `msg_thread_keys` (
@@ -11,6 +10,8 @@ CREATE TABLE `msg_thread_keys` (
 	key_zid INT(11) UNSIGNED NOT NULL,             --- #0, #1, #2, etc. lowest UID gets 0.
 	key_data TEXT NOT NULL,                        --- Armor64-ed PGP message
 	etime DATETIME NOT NULL,                       --- When to delete the key
+	write_key CHAR(64) NOT NULL,                   --- conversants need to prove knowledge of this key to write
+	id_proof TEXT,                                 --- Users should prove who they are
 	PRIMARY KEY (`thread_id`, `key_zid`),
 	CONSTRAINT `msg_thread_keys_ibfk_1` FOREIGN KEY(`thread_id`) REFERENCES `msg_threads` (`thread_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -1,48 +1,149 @@
 <html>
- <head>
-  <title>Keybase Messenger</title>
-  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-  </script>
-  <script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-      tex2jax: { inlineMath: [['$','$'],['\\(','\\)']] }
-    });
-  </script>
- </head>
- <body>
-  <h1>Keybase Messaging Protocol</h1>
+  <head>
+    <title>Keybase Messenger</title>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: { inlineMath: [['$','$'],['\\(','\\)']] }
+      });
+    </script>
+  </head>
+  <body>
 
-  <h2>Goals</h2>
+    <h1>Keybase Messaging Protocol</h1>
 
-  We can't hope for perfect forward secrecy since Alice, Bob and Charlie are not all assumed to be online at once.
-  Though protocols exist to achieve <a href="http://eprint.iacr.org/2003/083">Non-Interactive Forward Secrecy</a>,
-  they are experimental and challenging to implement. We certainly don't discourage others from trying it out, but
-  it is beyond the scope of this protocol.
+    <h2>Goals</h2>
 
-  Here are the goals we do hope to achieve:
+    <p>
+      We can't hope for perfect forward secrecy since Alice, Bob and Charlie are not all assumed to be online at once.
+      Though protocols exist to achieve <a href="http://eprint.iacr.org/2003/083">Non-Interactive Forward Secrecy</a>,
+      they are experimental and challenging to implement. We certainly don't discourage others from trying it out, but
+      it is beyond the scope of this protocol.
+    </p>
 
-  <ol>
-   <li>At least a PGP-level of security: if all parties keep their keys protected, the conversation is secret 
-       and resilient to forgery and impersation.</li>
-   <li>Resilience to server compromise: if the server is compromised:
-       <ol>
-        <li>Guarantee #1 is still upheld.</li>
-        <li>All thread metadata is still secret; the attacker can't discover who was involved in which conversations.</li>
-       </ol>
-   <li>Weak repudiation: if any conversant in the thread has their private key compromised, and if the
-       server is compromised, conversations older than a given timeout can still be repudiated.</li>
-   <li>Weak forward secrecy: if the server is compromised, and if any number of conversants have their
-       keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
-  </ol>
+    <p>
+      Here are the goals we do hope to achieve:
 
-  <h2>Design</h2>
-  <h3>Initializing the Thread</h3>
-  <p> 
-    Alice wants to start up a conversation with Bob and Charlie. She:
-    <ol>
-     <li>Looks up public keys for them, getting $K_B$ and $K_C$.</li>
-    </ol>
-  </p>
+      <ol>
+        <li>At least a PGP-level of security: if all parties keep their keys protected, the conversation is secret 
+            and resilient to forgery and impersation.</li>
+        <li>Resilience to server compromise: if the server is compromised:
+          <ol>
+            <li>Guarantee #1 is still upheld.</li>
+            <li>All thread metadata is still secret; the attacker can't discover who was involved in which conversations.</li>
+          </ol>
+        </li>
+        <li>Weak repudiation: if any conversant in the thread has their private key compromised, and if the
+         server is compromised, conversations older than a given timeout can still be repudiated.</li>
+        <li>Weak forward secrecy: if the server is compromised, and if any number of conversants have their
+         keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
+      </ol>
+    </p>
+
+    <h2>Design</h2>
+    <h3>Step 1: Initializing the Thread, Client Side</h3>
+
+    <p> 
+      Alice wants to start up a conversation with Bob and Charlie.
+
+      <ol>
+        <li>Generates two random session keys:
+          <ul>
+            <li>$k_s$, a 256-bit AES key</li>
+            <li>$k_m$, a 256-bit key used to maintain message integrity; it will be used as key to HMAC-SHA512.</li>
+          </ul>
+        </li>
+        <li>For each conversant, generate a random "write-token", the possesion of which will allow Alice, Bob
+            and Charlie to post to the server as themselves.  Call these tokens $t_A$, $t_B$, and $t_C$.
+            They are random 128-bit strings.</li>
+        <li>Generates a thread ID: $i$</li>
+        <li>Looks up public keys $K_A, K_B$ and $K_C$.</li>
+        <li>Creates a "thread init message" for each of the three conversants:
+          <ul>
+            <li>$E_{K_A}([ [A,B,C], i, k_s, k_m, t_A ])$</li>
+            <li>$E_{K_B}([ [A,B,C], i, k_s, k_m, t_B ])$</li>
+            <li>$E_{K_C}([ [A,B,C], i, k_s, k_m, t_C ])$</li>
+          </ul>
+          Note that Alice can use PGP messages for this, but she ought to strip out the exterior part of the 
+          message that identifies which public key the message is intended for.  She should overwrite this part 
+          of the message with <code>0</code> bytes.  She also should not sign the message.
+        </li>
+        <li>
+          Sends these messages to the server, along with the message $[i, t_A, t_B, t_C]$
+        </li>
+      </ol>
+    </p>
+
+    <h3>Step 2: Initializing the Thread, Server side</h3>
+
+    <p>
+      The server receives the message Alice send in the previous Step.  The server writes this information to the database
+      and reserve slots for users $U_0, U_1$ and $U_2$ in conversation $i$.  Note that $U_0, U_1$ and $U_2$ are
+      the server's pseudoynms for $A$, $B$ and $C$ on the clients. The server doesn't know the identities of Alice, Bob 
+      or Charlie, so it can't refer to them as $A$, $B$, or $C$.
+    </p>
+    <p>
+      By convention, the clients should always order user IDs from least to highest UID, to that way the correspondence
+      of $A$ to $U_0$, etc, is agreed upon by all conversants and the server.
+    </p>
+
+    <h3>Step 3: Notification</h3>
+
+    <p>
+      Alice now needs to notify Bob and Charlie that they should check for messages on the server.
+      She really only needs to send them $i$, and can do so in the clear or protected with crypto.
+      However, the question is how best can she do this?
+    </p>
+    <p>
+      We leave this stage of the protocol open to implentors.  In our implementation, the notification server
+      is the same server as the relay server in Step 2. However, the server never writes notification data
+      to disk, and therefore, an adversary who captures the server after the conversation ended can't determine
+      who $U_0, U_1 and U_2$ are.
+    </p>
+
+    <h3>Step 3: Key Establishment</h3>
+
+    <p>
+      Bob, Charlie (and Alice if she switched machines) query the server for $[i,j]$, where $j$ is their position
+      in the relative order of user IDs. The server replies with the $j$th encrypted message in conversation $i$
+      that Alice sent in Step 1.  They can now decrypt and recover $k_s, k_m$.
+    </p>
+
+    <h3>Step 4: Authentication</h3>
+
+    <p>
+      Any user in the conversation can optionally prove their identity and authenticate their messages in the
+      conversation.  Without this guarantee, Alice, Bob and Charlie can still converse, but they have no guarantee
+      that they are conversing with authentic people.
+    </p>
+
+    <p>
+      Authentication is the same for all conversants, but take Bob for example:
+      <ol>
+        <li>Bob generates a temporary keypair: $k'_{B}, K'_{B}$</li>
+        <li>Bob generates a signature $s = \sigma_{k_{B}}([i, K'_{B}])$</li>
+        <li>Bob encrypts $e = E_{k_s,k_m}([K'_{B}, s])$. Here $E_{k_s,k_m}$ is AES-256 encryption with key $k_s$ in CTR mode,
+            and MACed with HMAC-SHA512 on key $k_m$.</li>
+        <li>Bob sends $[i, t_B, m]$ to the server</li>
+        <li>The server will only allow this signature to be posted if $t_B$ matches the "write token" that Alice
+            established for Bob in Step 1.</li>
+      </ol>
+    </p>
+
+    <p>
+      Once Bob has posted this message to the server, all conversants can retrieve it, and verify Bob's signature.
+      Once they do, they have Bob's temporary public key $K'_{B}$.
+    </p>
+
+    <h3>Step 5: Sending Messages</h3>
+
+    <p>
+      When Bob wants to send a message $m$ to the group, he computes: $E_{k_s,k_m}([m, \sigma_{k'_{B}}([i, m])]).
+      That is, he signs the message he wants to post with his temporary signing key, then encrypts using
+      the session key for this conversation.
+    </p>
+
 
  </body>
 </html>

@@ -142,7 +142,7 @@
       We leave this stage of the protocol open to implentors.  In our implementation, the notification server
       is the same server as the relay server in Step 2. However, the server never writes notification data
       to disk, and therefore, an adversary who captures the server after the conversation ended can't determine
-      who $U_0, U_1 and U_2$ are.
+      who $U_0, U_1$ and $U_2$ are.
     </p>
 
     <h3>Step 3: Key Establishment</h3>
@@ -208,14 +208,19 @@
     </p>
 
 
-    <h3>Step 7: Deleting Messages</h3>
+    <h3>Step 7: Deleting Messages and Keys</h3>
 
     <p>
       The server maintains a deletion pointer $k$ for each user $j$ in conversation $i$.  Charlie can bump his
-      deletion pointer for thread $i$ to $k$ if he sends a message $[\textrm{bump}, i, t_C, k]$ to the server. Once
+      deletion pointer for thread $i$ to $k$ if he sends a message $[\textrm{delete-msg}, i, t_C, k]$ to the server. Once
       has been bumped past $k$ by all conversants, the server can delete messages through $k$ in the thread.
     </p>
 
+    <p>
+      Charlie also can ask the server to delete their session keys, via $[\textrm{delete-key}, i, t_C]$.
+      After this point, Alice and Bob need to take the server's word that messages coming from Charlie
+      are indeed from Charlie.  Charlie can also, later on, post a new session key if he pleases.
+    </p>
 
  </body>
 </html>

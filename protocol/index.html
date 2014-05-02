@@ -180,6 +180,9 @@
         <li>Bob sends $[\textrm{auth}, i, t_B, e]$ to the server</li>
         <li>The server will only allow this signature to be posted if $t_B$ matches the "write token" that Alice
             established for Bob in Step 1, or a new one he established in Step 3b.</li>
+        <li>Bob can also send $[\textrm{store-key}, i, t_B, E_{B}(k'_{B})]$ to the server.
+            That is, he can store his temporary signing key, protected with his long-lived secret key,
+            to the server so he can later retrieve it if he switches clients during the thread.</li>
       </ol>
     </p>
 

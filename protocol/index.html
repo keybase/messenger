@@ -194,7 +194,10 @@
     <h3>Step 5: Sending Messages</h3>
 
     <p>
-      When Bob wants to send a message $m$ to the group, he computes: $e = E_{k_s,k_m}([m, \sigma_{k'_{B}}([i, m])])$.
+      When Bob wants to send a message $m$ to the group, he computes
+
+      \[e = E_{k_s,k_m}([m, \sigma_{k'_{B}}([i, m])]) \]
+
       That is, he signs the message he wants to post with his temporary signing key, then encrypts using
       the session key for this conversation. Bob can alternatively send an unauthenticated message to the group,
       but Alice and Charlie's clients will show the message as unauthenticated. 

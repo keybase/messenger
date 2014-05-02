@@ -1,0 +1,48 @@
+<html>
+ <head>
+  <title>Keybase Messenger</title>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: { inlineMath: [['$','$'],['\\(','\\)']] }
+    });
+  </script>
+ </head>
+ <body>
+  <h1>Keybase Messaging Protocol</h1>
+
+  <h2>Goals</h2>
+
+  We can't hope for perfect forward secrecy since Alice, Bob and Charlie are not all assumed to be online at once.
+  Though protocols exist to achieve <a href="http://eprint.iacr.org/2003/083">Non-Interactive Forward Secrecy</a>,
+  they are experimental and challenging to implement. We certainly don't discourage others from trying it out, but
+  it is beyond the scope of this protocol.
+
+  Here are the goals we do hope to achieve:
+
+  <ol>
+   <li>At least a PGP-level of security: if all parties keep their keys protected, the conversation is secret 
+       and resilient to forgery and impersation.</li>
+   <li>Resilience to server compromise: if the server is compromised:
+       <ol>
+        <li>Guarantee #1 is still upheld.</li>
+        <li>All thread metadata is still secret; the attacker can't discover who was involved in which conversations.</li>
+       </ol>
+   <li>Weak repudiation: if any conversant in the thread has their private key compromised, and if the
+       server is compromised, conversations older than a given timeout can still be repudiated.</li>
+   <li>Weak forward secrecy: if the server is compromised, and if any number of conversants have their
+       keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
+  </ol>
+
+  <h2>Design</h2>
+  <h3>Initializing the Thread</h3>
+  <p> 
+    Alice wants to start up a conversation with Bob and Charlie. She:
+    <ol>
+     <li>Looks up public keys for them, getting $K_B$ and $K_C$.</li>
+    </ol>
+  </p>
+
+ </body>
+</html>

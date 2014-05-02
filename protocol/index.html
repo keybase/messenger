@@ -8,6 +8,33 @@
         tex2jax: { inlineMath: [['$','$'],['\\(','\\)']] }
       });
     </script>
+    <style>
+    body {
+      max-width:600px;
+      margin:100px;
+      font-family: times;
+    }
+    p {
+      margin-bottom:20px;
+    }
+    ol {
+      font-size:1.0em;
+    }
+    li {
+      margin-top:10px;
+    }
+    h1,h2 {
+      margin-top:30px;
+    }
+    h3 {
+      margin-top:20px;
+    }
+    ol,ul {
+      margin-top: 10px;
+      margin-bottom: 20px;
+
+    }
+    </style>
   </head>
   <body>
 
@@ -29,10 +56,10 @@
         <li>At least a PGP-level of security: if all parties keep their keys protected, the conversation is secret 
             and resilient to forgery and impersation.</li>
         <li>Resilience to server compromise: if the server is compromised:
-          <ol>
+          <ul>
             <li>Guarantee #1 is still upheld.</li>
             <li>All thread metadata is still secret; the attacker can't discover who was involved in which conversations.</li>
-          </ol>
+          </ul>
         </li>
         <li>Weak repudiation: if any conversant in the thread has their private key compromised, and if the
          server is compromised, conversations older than a given timeout can still be repudiated.</li>
@@ -41,11 +68,27 @@
       </ol>
     </p>
 
+    <h2>Assumptions</h2>
+
+    <p>
+      We're assuming a stateful server, and also TLS-protected communication to and from that server.
+      That channel should use PFS-key-exchanges, so at least there's forward secrecy with respect to a
+      passive eavesdropper.
+    </p>
+
+
     <h2>Design</h2>
+
+    <p>
+      Assume that Alice wants to start a conversation with Bob and Charlie.  She first picks
+      a proxy server that she has some amount of faith in.
+    </p>
+
+
     <h3>Step 1: Initializing the Thread, Client Side</h3>
 
     <p> 
-      Alice wants to start up a conversation with Bob and Charlie.
+      Alice initializes the conversation. She:
 
       <ol>
         <li>Generates two random session keys:
@@ -54,23 +97,23 @@
             <li>$k_m$, a 256-bit key used to maintain message integrity; it will be used as key to HMAC-SHA512.</li>
           </ul>
         </li>
-        <li>For each conversant, generate a random "write-token", the possesion of which will allow Alice, Bob
+        <li>For each conversant, generates a random "write-token", the possesion of which will allow Alice, Bob
             and Charlie to post to the server as themselves.  Call these tokens $t_A$, $t_B$, and $t_C$.
             They are random 128-bit strings.</li>
         <li>Generates a thread ID: $i$</li>
-        <li>Looks up public keys $K_A, K_B$ and $K_C$.</li>
+        <li>Looks up public keys $K_A, K_B$ and $K_C$ via whatever key distribution mechanism she prefers.</li>
         <li>Creates a "thread init message" for each of the three conversants:
           <ul>
-            <li>$E_{K_A}([ [A,B,C], i, k_s, k_m, t_A ])$</li>
-            <li>$E_{K_B}([ [A,B,C], i, k_s, k_m, t_B ])$</li>
-            <li>$E_{K_C}([ [A,B,C], i, k_s, k_m, t_C ])$</li>
+            <li>$e_A = E_{K_A}([ i, t_A, [A,B,C], k_s, k_m ])$</li>
+            <li>$e_B = E_{K_B}([ i, t_B, [A,B,C], k_s, k_m ])$</li>
+            <li>$e_C = E_{K_C}([ i, t_C, [A,B,C], k_s, k_m ])$</li>
           </ul>
           Note that Alice can use PGP messages for this, but she ought to strip out the exterior part of the 
           message that identifies which public key the message is intended for.  She should overwrite this part 
           of the message with <code>0</code> bytes.  She also should not sign the message.
         </li>
         <li>
-          Sends these messages to the server, along with the message $[i, t_A, t_B, t_C]$
+          Sends an initialization message to the server: $[\textrm{init}, i, [t_A, e_A], [t_B, e_B], [t_C, e_C] ]$
         </li>
       </ol>
     </p>
@@ -78,21 +121,21 @@
     <h3>Step 2: Initializing the Thread, Server side</h3>
 
     <p>
-      The server receives the message Alice send in the previous Step.  The server writes this information to the database
+      The server receives the message Alice send in the previous Step.  The server writes this information to its database
       and reserve slots for users $U_0, U_1$ and $U_2$ in conversation $i$.  Note that $U_0, U_1$ and $U_2$ are
       the server's pseudoynms for $A$, $B$ and $C$ on the clients. The server doesn't know the identities of Alice, Bob 
       or Charlie, so it can't refer to them as $A$, $B$, or $C$.
     </p>
     <p>
       By convention, the clients should always order user IDs from least to highest UID, to that way the correspondence
-      of $A$ to $U_0$, etc, is agreed upon by all conversants and the server.
+      of $A$ to $U_0$, $B$ to $U_1$ etc, is agreed upon by all conversants and the server.
     </p>
 
     <h3>Step 3: Notification</h3>
 
     <p>
       Alice now needs to notify Bob and Charlie that they should check for messages on the server.
-      She really only needs to send them $i$, and can do so in the clear or protected with crypto.
+      She really only needs to send them $i$ and the server name, and can do so in the clear or protected with crypto.
       However, the question is how best can she do this?
     </p>
     <p>
@@ -105,9 +148,18 @@
     <h3>Step 3: Key Establishment</h3>
 
     <p>
-      Bob, Charlie (and Alice if she switched machines) query the server for $[i,j]$, where $j$ is their position
-      in the relative order of user IDs. The server replies with the $j$th encrypted message in conversation $i$
-      that Alice sent in Step 1.  They can now decrypt and recover $k_s, k_m$.
+      Bob, Charlie (and Alice if she switched machines) query the server for
+      $[\textrm{key-lookup}, i, j]$, where $j$ is their position in the
+      relative order of user IDs. The server replies with the $j$th encrypted
+      message in conversation $i$ that Alice sent in Step 1.  They can now
+      decrypt and recover $k_s, k_m$.
+    </p>
+
+    <h3>Step 3b: Token Swap</h3>
+
+    <p>
+      Charlie can ask the server to swap his existing token $t_B$ for a new token $t'_B$, one that Alice doesn't know.
+      He probably should do this before authenticating himself in Step 4.
     </p>
 
     <h3>Step 4: Authentication</h3>
@@ -125,9 +177,9 @@
         <li>Bob generates a signature $s = \sigma_{k_{B}}([i, K'_{B}])$</li>
         <li>Bob encrypts $e = E_{k_s,k_m}([K'_{B}, s])$. Here $E_{k_s,k_m}$ is AES-256 encryption with key $k_s$ in CTR mode,
             and MACed with HMAC-SHA512 on key $k_m$.</li>
-        <li>Bob sends $[i, t_B, m]$ to the server</li>
+        <li>Bob sends $[\textrm{auth}, i, t_B, e]$ to the server</li>
         <li>The server will only allow this signature to be posted if $t_B$ matches the "write token" that Alice
-            established for Bob in Step 1.</li>
+            established for Bob in Step 1, or a new one he established in Step 3b.</li>
       </ol>
     </p>
 
@@ -139,9 +191,29 @@
     <h3>Step 5: Sending Messages</h3>
 
     <p>
-      When Bob wants to send a message $m$ to the group, he computes: $E_{k_s,k_m}([m, \sigma_{k'_{B}}([i, m])]).
+      When Bob wants to send a message $m$ to the group, he computes: $e = E_{k_s,k_m}([m, \sigma_{k'_{B}}([i, m])])$.
       That is, he signs the message he wants to post with his temporary signing key, then encrypts using
-      the session key for this conversation.
+      the session key for this conversation. Bob can alternatively send an unauthenticated message to the group,
+      but Alice and Charlie's clients will show the message as unauthenticated. 
+    </p>
+
+    <p>
+      Bob posts this message to the server as $[\textrm{post}, i, t_B, e]$
+    </p>
+
+    <p>
+      The server serializes these messages. Optionally, the clients can sign the sequence number of the last received
+      message when sending new messages.  All users in the conversation can request all messages from thread $i$ at any
+      time, though Bob should send a notifiction (see above) to Alice and Charlie when posting a new message to the thread.
+    </p>
+
+
+    <h3>Step 7: Deleting Messages</h3>
+
+    <p>
+      The server maintains a deletion pointer $k$ for each user $j$ in conversation $i$.  Charlie can bump his
+      deletion pointer for thread $i$ to $k$ if he sends a message $[\textrm{bump}, i, t_C, k]$ to the server. Once
+      has been bumped past $k$ by all conversants, the server can delete messages through $k$ in the thread.
     </p>
 
 

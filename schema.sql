@@ -11,7 +11,9 @@ CREATE TABLE `msg_thread_keys` (
 	key_data TEXT NOT NULL,                        --- Armor64-ed PGP message
 	etime DATETIME NOT NULL,                       --- When to delete the key
 	write_key CHAR(64) NOT NULL,                   --- conversants need to prove knowledge of this key to write
-	id_proof TEXT,                                 --- Users should prove who they are
+	temp_signing_public_key TEXT,                  --- temporary signing key	
+	key_proof TEXT,                                --- Proof of that key with their main public key
+	temp_signing_secret_key TEXT,                  --- encrypted version of the signing key
 	PRIMARY KEY (`thread_id`, `key_zid`),
 	CONSTRAINT `msg_thread_keys_ibfk_1` FOREIGN KEY(`thread_id`) REFERENCES `msg_threads` (`thread_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -22,6 +24,7 @@ CREATE TABLE `msg_messages` (
 	sender_zid INT(11) UNSIGNED NOT NULL,          --- #0, #1, etc... who the sender was
 	num_chunks INT(11) UNSIGNED NOT NULL,          --- the number of chunks in the mesasge (usually 1)
 	etime DATETIME NOT NULL,                       --- When to delete the message
+	sig TEXT,                                      --- optional signature by the author
 	PRIMARY KEY (`thread_id`, `msg_zid`),
 	CONSTRAINT `msg_messages_ibfk_1` FOREIGN KEY(`thread_id`) REFERENCES `msg_threads` (`thread_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -11,7 +11,8 @@
     <style>
     body {
       max-width:600px;
-      margin:100px;
+      margin-left:100px;
+      margin-right:100px;
       font-family: times;
     }
     p {
@@ -40,7 +41,45 @@
 
     <h1>Keybase Messaging Protocol</h1>
 
-    <h2>Goals</h2>
+    <h2>Application Goals</h2>
+
+    <p>
+      The goal is to build a protocol and system for secure messaging between
+      2 or more conversants.  Those in the conversation will see a "threaded",
+      persistent view, much like Facebook email.  Conversants can jump between several
+      clients and machines, and are assumed to have spotty network connectivity.
+    </p>
+
+    <h2>Assumptions</h2>
+
+    <ul>
+      <li><strong>Central Server</strong>.
+          We're assuming a stateful server that all message conversants can
+          agree upon. There could be any number of such independently
+          adminstered servers. A server will store and relay messages for the
+          conversants and behaves  honestly until it's compromised by an
+          adversary. The adversary will then have access to all data stored on
+          the server at the time of corpromise, and all data going into and
+          out of the server going forward.
+      </li>
+
+      <li><strong>Transport Layer</strong>.
+        Communication to and from that server is protected with TLS, and preferably
+        with DHE or ECDHE key-exchanges for foward-secrecy.
+      </li>
+
+      <li><strong>Public Key Exchange</strong>.
+        Clients can get each other's public PGP keys via Keybase or some other mechanism.
+        The chosen server need not be involved.
+      </li>
+
+      <li><strong>Notification Channel</strong>.
+        Some notification channel exists to tell conversants they have a new message ready.
+        This channel can be the server managing the conversation, or any other chanel.
+      </li>
+    </ul>
+
+    <h2>Security Goals</h2>
 
     <p>
       We can't hope for perfect forward secrecy since Alice, Bob and Charlie are not all assumed to be online at once.
@@ -53,35 +92,29 @@
       Here are the goals we do hope to achieve:
 
       <ol>
-        <li>At least a PGP-level of security: if all parties keep their keys protected, the conversation is secret 
+        <li><strong>At least a PGP-level of security</strong>. If all parties keep their keys protected, the conversation is secret 
             and resilient to forgery and impersation.</li>
-        <li>Resilience to server compromise: if the server is compromised:
+        <li><strong>Resilience to server compromise</strong>. if the server is compromised:
           <ul>
             <li>Guarantee #1 is still upheld.</li>
             <li>All thread metadata is still secret; the attacker can't discover who was involved in which conversations.</li>
           </ul>
         </li>
-        <li>Weak repudiation: if any conversant in the thread has their private key compromised, and if the
+        <li><strong>Authentication</strong>. Users can authenticate themselves and their
+          messages to other conversants in the conversation.</li>
+        <li><strong>Weak repudiation</strong>. If any conversant in the thread has their private key compromised, and if the
          server is compromised, conversations older than a given timeout can still be repudiated.</li>
-        <li>Weak forward secrecy: if the server is compromised, and if any number of conversants have their
+        <li><strong>Weak forward secrecy</strong>. If the server is compromised, and if any number of conversants have their
          keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
       </ol>
     </p>
-
-    <h2>Assumptions</h2>
-
-    <p>
-      We're assuming a stateful server, and also TLS-protected communication to and from that server.
-      That channel should use PFS-key-exchanges, so at least there's forward secrecy with respect to a
-      passive eavesdropper.
-    </p>
-
-
     <h2>Design</h2>
 
     <p>
       Assume that Alice wants to start a conversation with Bob and Charlie.  She first picks
-      a proxy server that she has some amount of faith in.
+      a proxy server that she has some amount of faith in.  That could be the one Keybase.io provides,
+      or one she maintains, etc.  Alice, Bob and Charlie will all have to communicate with the
+      same server for the purposes of this conversation.
     </p>
 
 
@@ -121,7 +154,7 @@
     <h3>Step 2: Initializing the Thread, Server side</h3>
 
     <p>
-      The server receives the message Alice send in the previous Step.  The server writes this information to its database
+      The server receives the message Alice sent in the previous Step.  The server writes this information to its database
       and reserve slots for users $U_0, U_1$ and $U_2$ in conversation $i$.  Note that $U_0, U_1$ and $U_2$ are
       the server's pseudoynms for $A$, $B$ and $C$ on the clients. The server doesn't know the identities of Alice, Bob 
       or Charlie, so it can't refer to them as $A$, $B$, or $C$.
@@ -136,7 +169,6 @@
     <p>
       Alice now needs to notify Bob and Charlie that they should check for messages on the server.
       She really only needs to send them $i$ and the server name, and can do so in the clear or protected with crypto.
-      However, the question is how best can she do this?
     </p>
     <p>
       We leave this stage of the protocol open to implentors.  In our implementation, the notification server
@@ -162,6 +194,20 @@
       He probably should do this before authenticating himself in Step 4.
     </p>
 
+    <h3>Interlude: Channel Encryption</h3>
+
+    <p>
+      Now Alice, Bob and Charlie are ready to communicate over the channel they've established.
+      The do this with AES256-encryption in CTR mode, and authenticated with HMAC-SHA512.
+      Given keys $k_s$ and $k_m$ and plaintext $p$, define $E_{k_s,k_m}(p)$ as:
+      <ul>
+        <li>Pick a random nonce $r$</li>
+        <li>Generate ciphertext: $c = \mathrm{AES256CTR}_{k_s}(r,p)$</li>
+        <li>Generate MAC: $m = \mathrm{SHA512HMAC}_{k_m}(r,c)$</li>
+        <li>Output encryption: $[r,c,m]$</li>
+      </ul>
+    </p>
+
     <h3>Step 4: Authentication</h3>
 
     <p>
@@ -175,8 +221,7 @@
       <ol>
         <li>Bob generates a temporary keypair: $k'_{B}, K'_{B}$</li>
         <li>Bob generates a signature $s = \sigma_{k_{B}}([i, K'_{B}])$</li>
-        <li>Bob encrypts $e = E_{k_s,k_m}([K'_{B}, s])$. Here $E_{k_s,k_m}$ is AES-256 encryption with key $k_s$ in CTR mode,
-            and MACed with HMAC-SHA512 on key $k_m$.</li>
+        <li>Bob encrypts $e = E_{k_s,k_m}([K'_{B}, s])$.</li>
         <li>Bob sends $[\textrm{auth}, i, t_B, e]$ to the server</li>
         <li>The server will only allow this signature to be posted if $t_B$ matches the "write token" that Alice
             established for Bob in Step 1, or a new one he established in Step 3b.</li>

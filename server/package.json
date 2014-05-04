@@ -1,0 +1,31 @@
+{
+  "name": "keybase-messenger-server",
+  "version": "0.0.0",
+  "description": "",
+  "main": "app.iced",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keybase/messenger"
+  },
+  "author": "Maxwell Krohn",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/keybase/messenger/issues"
+  },
+  "homepage": "https://github.com/keybase/messenger",
+  "dependencies": {
+    "iced-coffee-script": "^1.7.1-b",
+    "express": "^4.1.1",
+    "yargs": "^1.2.1",
+    "framed-msgpack-rpc": "^1.1.2",
+    "mysql": "^2.2.0",
+    "body-parser": "^1.0.2",
+    "method-override": "^1.0.0",
+    "errorhandler": "^1.0.1",
+    "morgan": "^1.0.1",
+    "kbpgp": "^0.1.14"
+  }
+}

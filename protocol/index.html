@@ -33,13 +33,21 @@
     ol,ul {
       margin-top: 10px;
       margin-bottom: 20px;
-
+    }
+    .authorblock {
+      margin-left: 50px; 
     }
     </style>
   </head>
   <body>
 
     <h1>Keybase Messaging Protocol</h1>
+
+    <div class="authorblock">
+      By: Maxwell Krohn (max AT keybase.io)<br/>
+      Version: 1.0.0<br/>
+      Last update: 2014-05-04<br/>
+    </div>
 
     <h2>Application Goals</h2>
 
@@ -258,8 +266,7 @@
       time, though Bob should send a notifiction (see above) to Alice and Charlie when posting a new message to the thread.
     </p>
 
-
-    <h3>Step 7: Deleting Messages and Keys</h3>
+    <h3>Step 6: Deleting Messages and Keys</h3>
 
     <p>
       The server maintains a deletion pointer $k$ for each user $j$ in conversation $i$.  Charlie can bump his
@@ -268,7 +275,7 @@
     </p>
 
     <p>
-      Charlie also can ask the server to delete their session keys, via $[\textrm{delete-key}, i, t_C]$.
+      Charlie also can ask the server to delete his session keys, via $[\textrm{delete-key}, i, t_C]$.
       After this point, Alice and Bob need to take the server's word that messages coming from Charlie
       are indeed from Charlie.  Charlie can also, later on, post a new session key if he pleases.
     </p>

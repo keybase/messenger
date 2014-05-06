@@ -15,13 +15,13 @@ exports.Tx = class Tx
 
 ##=======================================================================
 
-class Module
+class Database
 
-  constructor : ->
+  constructor : (@cfg) ->
 
   init : (cb) ->
-    n = mm.config.db.n_threads
-    cfg = mm.config.db
+    n = @cfg.n_threads
+    cfg = @cfg.db
     @_waiters = []
     @_clients = (mysql.createConnection cfg for i in [0...n])
     cb true
@@ -143,6 +143,23 @@ class Module
     cb err, elist, edict
     @_putback cli
     
+##=======================================================================
+
+class Module
+
+  constructor : () ->
+    for name, cfg of mm.config.dbs
+      @_dbs[name] = new Database cfg
+
+  init : (cb) ->
+    ok = true
+    for db in @_dbs
+      await db.init defer tmp
+      ok = false unless tmp
+    cb ok
+
+  get : (n) -> @_dbs[n]
+
 ##=======================================================================
 
 exports.Module = Module

@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Keybase Messenger</title>
+    <title>Keybase Secure Threaded Messaging (KSTM)</title>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
     </script>
     <script type="text/x-mathjax-config">
@@ -41,7 +41,7 @@
   </head>
   <body>
 
-    <h1>Keybase Messaging Protocol</h1>
+    <h1>Keybase Secure Threaded Messaging (KSTM)</h1>
 
     <div class="authorblock">
       By: Maxwell Krohn (max AT keybase.io)<br/>
@@ -61,7 +61,7 @@
     <h2>Assumptions</h2>
 
     <ul>
-      <li><strong>Central Server</strong>.
+      <li><strong>Central Servers</strong>.
           We're assuming a stateful server that all message conversants can
           agree upon. There could be any number of such independently
           adminstered servers. A server will store and relay messages for the
@@ -83,7 +83,7 @@
 
       <li><strong>Notification Channel</strong>.
         Some notification channel exists to tell conversants they have a new message ready.
-        This channel can be the server managing the conversation, or any other chanel.
+        The protocol does not specify how this should work.
       </li>
     </ul>
 
@@ -116,7 +116,42 @@
          keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
       </ol>
     </p>
-    <h2>Design</h2>
+
+    <h2>High-Level Design</h2>
+
+    <p>
+      The message system is decomposed into two systems:
+      (1) an inbox system; and (2)
+      a message-threading system. 
+      The inbox system is in charge of notifying
+      users when they have new messages, and keeping track of which message threads they take
+      part in. A user registers for an inbox server when they first sign up for the system, and
+      uses the same inbox server for all conversations.
+    </p>
+
+    <p>
+      The message-threading system manages the specifics of a message thread,
+      which is a series of messages and replies among a fixed set of conversants.
+      The user who initiates the conversation picks the message-threading server, 
+      but the conversants can be spread across independent inbox servers.
+    </p>
+
+    <p>
+      Users on the system must globally register the following two properties:
+      <ul>
+        <li>A public key</li>
+        <li>An inbox server, signed with the user's public key, potentially stored as
+            a <a href="https://tools.ietf.org/html/rfc4880#section-5.12">user-attribute</a>
+            in the user's public key.</li>
+      </ul>
+      At first, the Keybase server will implement a public key lookup, an
+      inbox server, and a message-threading server, but users have the option
+      to switch to different platforms and implementations as they choose.
+    </p>
+
+
+
+    <h2>Message Threading Design</h2>
 
     <p>
       Assume that Alice wants to start a conversation with Bob and Charlie.  She first picks
@@ -179,10 +214,22 @@
       She really only needs to send them $i$ and the server name, and can do so in the clear or protected with crypto.
     </p>
     <p>
-      We leave this stage of the protocol open to implentors.  In our implementation, the notification server
-      is the same server as the relay server in Step 2. However, the server never writes notification data
-      to disk, and therefore, an adversary who captures the server after the conversation ended can't determine
-      who $U_0, U_1$ and $U_2$ are.
+      Alice looks up the inbox servers that Bob and Charlie registered. As stated above, they can
+      specify such a server in the User-attribute packet of their keys.  For Bob, Alice
+      sends a message $[\textrm{notify}, B, u, 0 ]$ to Bob's registered
+      inbox server. The parameters are:
+
+      <ul>
+        <li>$B$, Bob's user ID</li>
+        <li>$u$, the URL of this thread, which takes the form:
+        <blockquote>
+          <code>https://$N$/$i$</code>
+        </blockquote>
+        Where $N$ is the name of this thread-server, and $i$ is the ID of the conversation.
+        </li>
+        <li>$0$, the message ID of the message in the thread, which is $0$ since the thread is just starting up.</li>
+      </ul>
+
     </p>
 
     <h3>Step 3: Key Establishment</h3>
@@ -278,6 +325,12 @@
       Charlie also can ask the server to delete his session keys, via $[\textrm{delete-key}, i, t_C]$.
       After this point, Alice and Bob need to take the server's word that messages coming from Charlie
       are indeed from Charlie.  Charlie can also, later on, post a new session key if he pleases.
+    </p>
+
+    <h2>Inbox Design</h2>
+
+    <p>
+      The Inbox server maintains a persistent mapping from a user to a set of active threads.
     </p>
 
  </body>

@@ -45,8 +45,8 @@
 
     <div class="authorblock">
       By: Maxwell Krohn (max AT keybase.io)<br/>
-      Version: 1.0.0<br/>
-      Last update: 2014-05-04<br/>
+      Version: 1.0.1<br/>
+      Last update: 2014-05-06<br/>
     </div>
 
     <h2>Application Goals</h2>
@@ -344,14 +344,32 @@
     <p>
       When the inbox server gets such a message for user $B$, it sends some sort of SMS, push,
       or plaintext email to Bob that he has new mail waiting for him. The decision is left to the
-      specifics of the inbox server provider, however, the provider should not send any
-      metadata in the push notification, for fear that some passive eavesdropper can 
+      inbox server provider.  However, the provider should not send any
+      unencrypted metadata in the push notification, for fear that some passive eavesdropper can 
       intercept it.
     </p>
 
     <p>
-      The inbox server also provides an interface for allowing users like Bob to retrieve
-      their messages:
+      Inbox servers should also provide an interface to allow retrieve, management
+      and compaction of inboxes.  Here are some anticipated RPCs the inbox server
+      should service:
+
+      <ul>
+        <li>
+          <strong>inbox</strong>: get inbox threads for the given user. If no query parameters
+          is provided, then get all messages; otherwise, the server can sort them and access
+          them by time.
+        </li>
+        <li>
+          <strong>delete</strong>: delete the given inbox threads.
+        </li>
+        <li>
+          <strong>compact</strong>: replace once set of inbox threads with another. This 
+          endpoint allows Bob to optimize future inbox accesses.  Rather than decrypting
+          $n$ times for $n$ threads, he can encrypt $n$ threads in one row and decrypt only
+          once.
+        </li>
+      </ul>
     </p>
 
  </body>

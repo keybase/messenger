@@ -215,18 +215,19 @@
     </p>
     <p>
       Alice looks up the inbox servers that Bob and Charlie registered. As stated above, they can
-      specify such a server in the User-attribute packet of their keys.  For Bob, Alice
-      sends a message $[\textrm{notify}, B, u, 0 ]$ to Bob's registered
+      specify such a server in the User-attribute packet of their keys. For the case of Bob, Alice
+      sends a message $[\textrm{notify}, B, E_{K_B}([u, 0]) ]$ to Bob's registered
       inbox server. The parameters are:
 
       <ul>
         <li>$B$, Bob's user ID</li>
         <li>$u$, the URL of this thread, which takes the form:
-        <blockquote>
-          <code>https://$N$/$i$</code>
-        </blockquote>
-        Where $N$ is the name of this thread-server, and $i$ is the ID of the conversation.
-        </li>
+         <blockquote>
+           <code>https://<em>N</em>/<em>i</em></code>
+         </blockquote>
+         where $N$ is the name of this thread-server, and $i$ is the ID of the conversation.
+         $N$ can be a standard domain name, or a Tor-routed domain name, for instance. 
+         Protocols other than <code>https</code> might eventually be supported.</li>
         <li>$0$, the message ID of the message in the thread, which is $0$ since the thread is just starting up.</li>
       </ul>
 
@@ -330,7 +331,27 @@
     <h2>Inbox Design</h2>
 
     <p>
-      The Inbox server maintains a persistent mapping from a user to a set of active threads.
+      The Inbox server maintains a persistent mapping from a user to a set of active threads, 
+      and notifies users of new activies on any of their threads.  As stated earlier, it gets
+      messages of the form:
+       \[ 
+        [ \textrm{notify}, B, E_{K_B}([u, k]) ]
+       \]
+      Where $B$ is the ID of the user receiving a notification, $u$ is the URL to access
+      the thread, and $k$ is the most recent serial message ID in the thread.
+    </p>
+
+    <p>
+      When the inbox server gets such a message for user $B$, it sends some sort of SMS, push,
+      or plaintext email to Bob that he has new mail waiting for him. The decision is left to the
+      specifics of the inbox server provider, however, the provider should not send any
+      metadata in the push notification, for fear that some passive eavesdropper can 
+      intercept it.
+    </p>
+
+    <p>
+      The inbox server also provides an interface for allowing users like Bob to retrieve
+      their messages:
     </p>
 
  </body>

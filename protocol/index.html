@@ -332,7 +332,7 @@
 
     <p>
       The Inbox server maintains a persistent mapping from a user to a set of active threads, 
-      and notifies users of new activies on any of their threads.  As stated earlier, it gets
+      and notifies users of new activities on any of their threads.  As stated earlier, it gets
       messages of the form:
        \[ 
         [ \textrm{notify}, B, E_{K_B}([u, k]) ]
@@ -350,7 +350,7 @@
     </p>
 
     <p>
-      Inbox servers should also provide an interface to allow retrieve, management
+      Inbox servers should also provide an interface to retrieval, management
       and compaction of inboxes.  Here are some anticipated RPCs the inbox server
       should service:
 
@@ -364,10 +364,10 @@
           <strong>delete</strong>: delete the given inbox threads.
         </li>
         <li>
-          <strong>compact</strong>: replace once set of inbox threads with another. This 
-          endpoint allows Bob to optimize future inbox accesses.  Rather than decrypting
-          $n$ times for $n$ threads, he can encrypt $n$ threads in one row and decrypt only
-          once.
+          <strong>compact</strong>: replace one set of inbox threads with another. This 
+          endpoint allows Bob to optimize future inbox accesses, by combining several
+          encrypted messages into single messages, that can be decrypted in one shot rather
+          than $n$.
         </li>
       </ul>
     </p>

@@ -9,14 +9,27 @@ CREATE TABLE `users` (
 	INDEX(`fingerprint`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `threads` (
-	`uid` VARCHAR(32),
-	`seqid` UNSIGNED INTEGER(11) NOT NULL,
+CREATE TABLE `notifications` (
+	`uid` CHAR(32) NOT NULL,
+	`notifcation_zid` UNSIGNED INTEGER(11) NOT NULL,
+	`ctime` UNSIGNED BIGINT NOT NULL,
 	`status` UNSIGNED INT(11) NOT NULL,
+	`data`  MEDIUMTEXT NOT NULL,
+	PRIMARY KEY(`uid`, `notification_zid`),
+	INDEX(`uid`, `ctime`),
+	INDEX(`uid`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Threads can be written back the server in "compacted form" and encrypted
+-- for the user who owns it.
+CREATE TABLE `threads` (
+	`uid` CHAR(32) NOT NULL,
+	`thread_id` CHAR(32) NOT NULL,
 	`ctime` UNSIGNED BIGINT NOT NULL,
 	`mtime` UNSIGNED BIGINT NOT NULL,
-	`data`  MEDIUMTEXT NOT NULL,
-	PRIMARY KEY(`uid`, `seqid`),
-	INDEX(`uid`, `ctime`),
-	INDEX(`uid`, `mtime`)
+	`edata` MEDIUMTEXT NOT NULL,
+	`status` UNSIGNED INT(11) NOT NULL,
+	PRIMARY KEY (`uid`, `thread_id`),
+	INDEX (`uid`, `mtime`),
+	INDEX (`uid`, `ctime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

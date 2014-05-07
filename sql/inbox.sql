@@ -8,11 +8,13 @@
 -- but might be controlled via postage stamps of some sort.
 CREATE TABLE `notifications` (
 	`uid` CHAR(32) NOT NULL,
+	`thread_id` CHAR(64) NOT NULL,
 	`notifcation_zid` UNSIGNED INTEGER(11) NOT NULL,
 	`ctime` UNSIGNED BIGINT NOT NULL,
 	`status` UNSIGNED INT(11) NOT NULL,
 	`data`  MEDIUMTEXT NOT NULL,
 	PRIMARY KEY(`uid`, `notification_zid`),
+	INDEX(`thread_id`),
 	INDEX(`uid`, `ctime`),
 	INDEX(`uid`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -28,7 +30,10 @@ CREATE TABLE `outgoing_postage` (
 	PRIMARY KEY(`uid`, `op_zid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `incoming_postage` (
+-- The postage stamps that we've issued. We mark them as used whenever
+-- a notification comes in with the given postage.  Postage can't
+-- be used twice.
+CREATE TABLE `issued_postage` (
 	`uid` CHAR(32) NOT NULL,
 	`stamp_id` CHAR(32) NOT NULL,
 	`itime` UNSIGNED BIGINT NOT NULL, -- when it was issued
@@ -39,6 +44,9 @@ CREATE TABLE `incoming_postage` (
 
 -- Threads can be written back the server in "compacted form" and encrypted
 -- for the user who owns it.  Writes to this table should be authenticated.
+-- It's important that the data is encrypted since otherwise someone who
+-- comrpomised the server could infer who we communicate with based on the
+-- postage.
 CREATE TABLE `threads` (
 	`uid` CHAR(32) NOT NULL,
 	`thread_id` CHAR(32) NOT NULL,

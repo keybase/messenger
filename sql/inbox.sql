@@ -19,27 +19,36 @@ CREATE TABLE `notifications` (
 	INDEX(`uid`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
--- Postage bundles for users to affix to their outgoing mails
-CREATE TABLE `outgoing_postage` (
+-- Weak password that can be exchanged for tokens.
+CREATE TABLE `passwords` (
 	`uid` CHAR(32) NOT NULL,
-	`op_zid` INTEGER UNSIGNED(11) NOT NULL,
+	`password` VARCHAR(128) NOT NULL,
 	`ctime` UNSIGNED BIGINT NOT NULL,
-	`mtime` UNSIGNED BIGINT NOT NULL,
-	`edata` MEDIUMTEXT NOT NULL,
-	PRIMARY KEY(`uid`, `op_zid`)
+	`etime` UNSIGNED BIGINT NOT NULL, -- when it was revoked (or 0 if not)
+	`status` UNSIGNED INT(11) NOT NULL,
+	PRIMARY KEY(`uid`, `password`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- The postage stamps that we've issued. We mark them as used whenever
--- a notification comes in with the given postage.  Postage can't
--- be used twice.
-CREATE TABLE `issued_postage` (
+CREATE TABLE `tokens` (
 	`uid` CHAR(32) NOT NULL,
-	`stamp_id` CHAR(32) NOT NULL,
-	`itime` UNSIGNED BIGINT NOT NULL, -- when it was issued
-	`stime` UNSIGNED BIGINT NOT NULL, -- when it was spent
-	`status` UNSIGNED INT(11) NOT NULL, -- its spend status
-	PRIMARY KEY(`uid`, `stamp_id`)
+	`token` CHAR(64) NOT NULL,
+	`ctime` UNSIGNED BIGINT NOT NULL,
+	`etime` UNSIGNED BIGINT NOT NULL,        -- when it expires if not pre-expired
+	`status` UNSIGNED INT(11) NOT NULL,
+	`source_type` UNSIGNED INT(11) NOT NULL, -- can be 1=PW, 2=Token, 3=BitCoin, 
+	`source_id` VARCHAR(256) NOT NULL,       -- the address to be blackholed if there's a problem
+	`comment` TEXT,                          -- comment on why revoked?
+	PRIMARY KEY(`uid`, `token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `bitcoin_blacklist` (
+	`uid` CHAR(32) NOT NULL,
+	`token` CHAR(64) NOT NULL,               -- which token was revoked in concert
+	`address` VARCHAR(64) NOT NULL,
+	`ctime` UNSIGNED BIGINT NOT NULL,
+	`status` UNSIGNED INT(11) NOT NULL,
+	PRIMARY KEY(`uid`, `address`),
+	KEY(`address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Threads can be written back the server in "compacted form" and encrypted

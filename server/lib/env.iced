@@ -6,15 +6,12 @@ class RunMode
   DEVEL : 0
   PROD : 1
   STAGING : 2
-  MAIL : 3
   
   constructor : (s) ->
     t =
       devel : @DEVEL
       prod : @PROD
       staging : @STAGING
-      stage : @STAGING
-      mail : @MAIL
       
     [ @_v, @_name, @_chosen ] = if (s? and (m = t[s])?) then [m, s, true ]
     else [ @PROD, "prod", false ]
@@ -22,7 +19,6 @@ class RunMode
   is_devel : () -> (@_v is @DEVEL)
   is_prod : () -> @_v is @PROD
   is_staging : () -> (@_v is @STAGING)
-  is_mail : () -> (@_v is @MAIL)
 
   toString : () -> @_name
   chosen : () -> @_chosen

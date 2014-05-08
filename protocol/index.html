@@ -61,43 +61,33 @@
     <h2>Assumptions</h2>
 
     <ul>
-      <li><strong>Central Servers</strong>.
-          We're assuming a stateful server that all message conversants can
-          agree upon. There could be any number of such independently
-          adminstered servers. A server will store and relay messages for the
-          conversants and behaves  honestly until it's compromised by an
-          adversary. The adversary will then have access to all data stored on
-          the server at the time of compromise, and all data going into and
-          out of the server going forward.
-      </li>
-
-      <li><strong>Transport Layer</strong>.
+      <li><strong>TLS Transport Layer with Perfect Forward-Secrecy</strong>.
         Communication to and from that server is protected with TLS, and preferably
         with DHE or ECDHE key-exchanges for foward-secrecy.
       </li>
 
       <li><strong>Public Key Exchange</strong>.
         Clients can get each other's public PGP keys via Keybase or some other mechanism.
-        The chosen server need not be involved.
       </li>
 
-      <li><strong>Notification Channel</strong>.
-        Some notification channel exists to tell conversants they have a new message ready.
-        The protocol does not specify how this should work.
-      </li>
     </ul>
 
     <h2>Security Goals</h2>
 
     <p>
-      We can't hope for perfect forward secrecy since Alice, Bob and Charlie are not all assumed to be online at once.
-      Though protocols exist to achieve <a href="http://eprint.iacr.org/2003/083">Non-Interactive Forward Secrecy</a>,
-      they are experimental and challenging to implement. We certainly don't discourage others from trying it out, but
-      it is beyond the scope of this protocol.
+      Though we would ideally like a protocol with Perfect Forward Secrecy, in practice,
+      we can't come up with a useful, convenient, asynchronous PFS protocol that seemlessly
+      supports multiple devices and spotty connectivity.  Some protocols 
+      achieve <a href="http://eprint.iacr.org/2003/083">Non-Interactive Forward Secrecy</a>,
+      with experimental and challenging cryptography. 
+      <a href="https://whispersystems.org/blog/asynchronous-security/">Others</a> propose a 
+      Diffe-Hellman pre-keying approach, which breaks down if
+      adversaries malliciously exhaust pregenerated keys, and futhermore 
+      requires $O(m^2n^2)$ network messages per interaction if there are $m$ conversants with $n$ devices each.
     </p>
 
     <p>
-      Here are the goals we do hope to achieve:
+      So don't shoot for perfect forward-secret, but here are the goals we do hope to achieve:
 
       <ol>
         <li><strong>At least a PGP-level of security</strong>. If all parties keep their keys protected, the conversation is secret 
@@ -113,24 +103,23 @@
         <li><strong>Weak repudiation</strong>. If any conversant in the thread has their private key compromised, and if the
          server is compromised, conversations older than a given timeout can still be repudiated.</li>
         <li><strong>Weak forward secrecy</strong>. If the server is compromised, and if any number of conversants have their
-         keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
+         keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>  
       </ol>
     </p>
 
     <h2>High-Level Design</h2>
 
     <p>
-      The message system is decomposed into two systems:
-      (1) an inbox system; and (2)
-      a message-threading system. 
-      The inbox system is in charge of notifying
-      users when they have new messages, and keeping track of which message threads they take
-      part in. A user registers for an inbox server when they first sign up for the system, and
-      uses the same inbox server for all conversations.
+      The message system is decomposed into two systems: (1) an inbox system;
+      and (2) a message-threading system.  The inbox system is in charge of
+      notifying users when they have new messages, and keeping track of which
+      message threads they take part in. A user registers for an inbox server
+      just once, and then uses the same inbox server for all future
+      conversations.
     </p>
 
     <p>
-      The message-threading system manages the specifics of a message thread,
+      A message-threading server manages the specifics of a message thread,
       which is a series of messages and replies among a fixed set of conversants.
       The user who initiates the conversation picks the message-threading server, 
       but the conversants can be spread across independent inbox servers.
@@ -144,9 +133,9 @@
             a <a href="https://tools.ietf.org/html/rfc4880#section-5.12">user-attribute</a>
             in the user's public key.</li>
       </ul>
-      At first, the Keybase server will implement a public key lookup, an
-      inbox server, and a message-threading server, but users have the option
-      to switch to different platforms and implementations as they choose.
+      At first, the Keybase server will implement all parts of the system, but
+      users have the option to switch to different platforms and
+      implementations as they choose.
     </p>
 
 

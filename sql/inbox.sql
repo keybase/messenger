@@ -80,7 +80,8 @@ CREATE TABLE `threads` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Tokens that users on this server can use to make outgoing requests.
--- They are encrypted with the user's public key.
+-- They are encrypted with the user's public key, but can be compressed
+-- by the user into single encrypted JSON objects.
 CREATE TABLE `out_tokens` (
 	`uid` CHAR(32) NOT NULL,
 	`out_token_zid` UNSIGNED INT(11) NOT NULL,  -- sequential ID

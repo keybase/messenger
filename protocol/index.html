@@ -248,11 +248,12 @@
       decrypt and recover $k_s, k_m$.
     </p>
 
-    <h3>Step 3b: Token Swap</h3>
+    <h3>Step 3b: Write Token Swap</h3>
 
     <p>
-      Charlie can ask the server to swap his existing token $t_B$ for a new token $t'_B$, one that Alice doesn't know.
-      He probably should do this before authenticating himself in Step 4.
+      Charlie can ask the server to swap his existing write token $t_B$ for a
+      new token $t'_B$, one that Alice doesn't know. He probably should do
+      this before authenticating himself in Step 4.
     </p>
 
     <h3>Interlude: Channel Encryption</h3>
@@ -319,6 +320,14 @@
       time, though Bob should send a notifiction (see above) to Alice and Charlie when posting a new message to the thread.
     </p>
 
+    <p>
+      Finally, Bob might also include "postage tokens" for Alice and Charlie
+      the encrypted payload of his message. Alice and Charlie can use these
+      tokens to intiate conversations with Bob in the future.  See the
+      discussion of <a href="#inbox-postage-tokens">postage tokens</a> below
+      for more details.
+    </p>
+
     <h3>Step 6: Deleting Messages and Keys</h3>
 
     <p>
@@ -360,7 +369,7 @@
       Bob can decrypt when he stops by to pick up his messages.
     </p>
 
-    <h3>Postage Tokens</h3>
+    <h3 id="inbox-postage-tokens">Postage Tokens</h3>
 
     <p>
       Alice needed one of Bob's "postage tokens" before she could send him a true notification.

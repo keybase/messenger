@@ -10,7 +10,6 @@ CREATE TABLE `notifications` (
 	`notification_id` CHAR(64) NOT NULL PRIMARY KEY,
 	`uid` CHAR(32) NOT NULL,
 	`thread_id` CHAR(64) NOT NULL,
-	`notification_zid` UNSIGNED INTEGER(11) NOT NULL,
 	`token_id` CHAR(32) NOT NULL,           -- the token associated with the notification.
 	`ctime` UNSIGNED BIGINT NOT NULL,
 	`status` UNSIGNED INT(11) NOT NULL,

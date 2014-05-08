@@ -145,7 +145,7 @@
     <p>
       Assume that Alice wants to start a conversation with Bob and Charlie.  She first picks
       a threading server that she has some amount of faith in.  That could be the one Keybase.io provides,
-      or one she maintains, etc.  Alice, Bob and Charlie will all have to communicate with the
+      or one she maintains, etc.  Alice, Bob and Charlie all communicate with the
       same server for the purposes of this conversation.
     </p>
 
@@ -166,12 +166,13 @@
             and Charlie to post to the server as themselves.  Call these tokens $t_A$, $t_B$, and $t_C$.
             They are random 128-bit strings.</li>
         <li>Generates a thread ID: $i$</li>
+        <li>Generates a random pseudo-thread IDs for all three conversants: $i_A, i_B, i_C$.
         <li>Looks up public keys $K_A, K_B$ and $K_C$ via whatever key distribution mechanism she prefers.</li>
         <li>Creates a "thread init message" for each of the three conversants:
           <ul>
-            <li>$e_A = E_{K_A}([ i, t_A, [A,B,C], k_s, k_m ])$</li>
-            <li>$e_B = E_{K_B}([ i, t_B, [A,B,C], k_s, k_m ])$</li>
-            <li>$e_C = E_{K_C}([ i, t_C, [A,B,C], k_s, k_m ])$</li>
+            <li>$e_A = E_{K_A}([ i, t_A, [A,B,C,i_A,i_B,i_C], k_s, k_m ])$</li>
+            <li>$e_B = E_{K_B}([ i, t_B, [A,B,C,i_A,i_B,i_C], k_s, k_m ])$</li>
+            <li>$e_C = E_{K_C}([ i, t_C, [A,B,C,i_A,i_B,i_C], k_s, k_m ])$</li>
           </ul>
           Note that Alice can use PGP messages for this, but she ought to strip out the exterior part of the 
           message that identifies which public key the message is intended for.  She should overwrite this part 
@@ -200,26 +201,41 @@
 
     <p>
       Alice now needs to notify Bob and Charlie that they should check for messages on the server.
-      She really only needs to send them $i$ and the server name, and can do so in the clear or protected with crypto.
+      The notification protocol is susceptible to spammer attacks, so precautions are needed.
     </p>
     <p>
       Alice looks up the inbox servers that Bob and Charlie registered. As stated above, they can
-      specify such a server in the User-attribute packet of their keys. For the case of Bob, Alice
-      sends a message $[\textrm{notify}, B, E_{K_B}([u, 0]) ]$ to Bob's registered
-      inbox server. The parameters are:
+      specify such a server in the User-attribute packet of their keys. Alice sends the following
+      message to Bob's inbox server:
+
+       \[ 
+         [\textrm{notify}, B, i_B, E_{K_B}(u), p_B, HMAC_{q_B}(i_B) ] 
+       \]
+
+      The parameters are:
 
       <ul>
         <li>$B$, Bob's user ID</li>
+        <li>$i_B$, the pseudo-ID for this conversation, that's Bob-specific
         <li>$u$, the URL of this thread, which takes the form:
-         <blockquote>
-           <code>https://<em>N</em>/<em>i</em></code>
-         </blockquote>
-         where $N$ is the name of this thread-server, and $i$ is the ID of the conversation.
-         $N$ can be a standard domain name, or a Tor-routed domain name, for instance. 
-         Protocols other than <code>https</code> might eventually be supported.</li>
-        <li>$0$, the message ID of the message in the thread, which is $0$ since the thread is just starting up.</li>
-      </ul>
 
+          \[
+            [ \textrm{https:}, N, i, 0]
+          \]
+
+         where $N$ is the name of this thread-server, $i$ is the true ID of
+         the conversation, and $0$ is the latest message in the thread. Since
+         this thread is just starting up, that message ID is 0, but will be
+         $\gt 0$ when messages go back and forth. $N$ can be a standard domain
+         name, or a Tor-routed domain name, for instance.  Protocols other
+         than <code>https</code> might eventually be supported.
+        </li>
+        <li>$p_B$ is a "postage token ID" that Bob previously issued Alice.  We discuss below how Alice can get such a token.</li>
+        <li>$q_B$ is the "postage token key" that corresponds to $p_B$.  Alice HMAC's the thread ID with this
+        token to distinguish her from a spammer starting an unwanted conversation.  As we discuss below, Alice
+        gives Bob $[ p_B, q_B ]$ as a pair.
+      </ul>
+      Of course, Alice does similarly for Charlie.
     </p>
 
     <h3>Step 3: Key Establishment</h3>
@@ -306,9 +322,9 @@
     <h3>Step 6: Deleting Messages and Keys</h3>
 
     <p>
-      The server maintains a deletion pointer $k$ for each user $j$ in conversation $i$.  Charlie can bump his
-      deletion pointer for thread $i$ to $k$ if he sends a message $[\textrm{delete-msg}, i, t_C, k]$ to the server. Once
-      has been bumped past $k$ by all conversants, the server can delete messages through $k$ in the thread.
+      The server maintains a deletion pointer $l$ for each user $j$ in conversation $i$.  Charlie can bump his
+      deletion pointer for thread $i$ to $l$ if he sends a message $[\textrm{delete-msg}, i, t_C, l]$ to the server. Once
+      has been bumped past $l$ by all conversants, the server can delete messages through $l$ in the thread.
     </p>
 
     <p>
@@ -321,22 +337,99 @@
 
     <p>
       The Inbox server maintains a persistent mapping from a user to a set of active threads, 
-      and notifies users of new activities on any of their threads.  As stated earlier, it gets
-      messages of the form:
-       \[ 
-        [ \textrm{notify}, B, E_{K_B}([u, k]) ]
-       \]
-      Where $B$ is the ID of the user receiving a notification, $u$ is the URL to access
-      the thread, and $k$ is the most recent serial message ID in the thread.
+      and notifies users of new activities on any of their threads.  As such, one of its
+      primary concerns is spam.
     </p>
+
+    <h3>Notify</h3>
+
+    <p>
+      To pick up the earlier example, when Alice sends Bob a notification, it's of the form:
+       \[ 
+         [\textrm{notify}, B, i_B, E_{K_B}(u), p_B, HMAC_{q_B}(i_B) ] 
+       \]
+      Where $B$ is the ID of the user receiving a notification (Bob), $i_B$ is Bob's ID for this
+      thread, $u$ is the URL to access
+      the thread, and $[ p_B, q_B ]$ is a postage token that Bob gave to Alice previously.
+    </p>
+
+    <p>
+      Upon receiving this message, Bob's inbox server first checks that $[ p_B, q_B ]$
+      is still a valid postage token.  If not, it rejects the message. If yes, then the inbox
+      server will commit the message payload &mdash; $E_{K_B}(u)$ &mdash; to the database, which
+      Bob can decrypt when he stops by to pick up his messages.
+    </p>
+
+    <h3>Postage Tokens</h3>
+
+    <p>
+      Alice needed one of Bob's "postage tokens" before she could send him a true notification.
+      This restriction exists to prevent spammers or internet trolls from harassing Bob.
+      Bob can issue a token to Alice in one of four ways:
+
+      <ol>
+
+        <li><strong>Direct Online Issuance</strong>. Bob generates a pair of random strings
+        $[ p, q ]$, writes them to the database, and issues them to Alice.  Bob will
+        typically do this when sending his initial message in a thread.</li>
+
+        <li><strong>Direct Offline Issuance</strong>. Bob registers a key public key $k^{*}_B$ 
+        with his inbox server, which he can use to generate "offline" postage.  Then, he
+        can sign a message $\sigma_{K^{*}_{B}}([p,q]])$ and send it to Alice.  If she presents
+        this message to Bob's inbox server, it should return with $[p,q]$, a valid postage token pair.</li>
+
+        <li><strong>Weak Password Issuance</strong>. Bob generates a "weak" password and registers it
+        with his inbox server.  He can share this "weak" password with his friends, who in turn,
+        can exchange this password with the server in order to get a valid postage token pair.
+        This system is quite brittle, but the cost of a break is minimal. A spammer could get
+        unlimited postage tokens, but Bob can cancel them all en mass.</li>
+
+        <li><strong>Bitcoin Issuance</strong>. If Alice is contacting Bob out of the blue,
+        she needs to prove that she burned some small number of Bitcoins before Bob's inbox
+        server will issue her a postage token.  This way, it becomes expensive for Alice to mount
+        a Sybil attack.  The exact protocol is:
+
+          <ul>
+            <li>Alice generates a Bitcoin keypair: $k_\$, K_\$$.</li>
+            <li>Alice "burns" about a US dollar's worth of bitcoin by donating to one of 
+              5 chosen charities  (these charities generate dedicate wallet addresses for receiving
+              these donations).</li>
+            <li>Alice signs $\sigma_{k_\$}([\mathrm{getPostage}, B])$ and sends the message to
+             Bob's inbox server.</li>
+            <li>If Bob hasn't previously blacklisted $K_\$$, then he issues Alice a new postage token.</li>
+          </ul>
+        </li>
+      </ol>
+    </p>
+
+    <p>
+      Note that all tokens are individually revocable, and all but the first
+      variety are batch-revocable. That is, Bob can revoke all postage tokens
+      associated with a particular signing key, bitcoin address, or weak
+      password.
+    </p>
+
+    <p>
+      Finally, Bob's inbox server will also store his outgoing postage tokens &mdash; i.e.,
+      those that Alice and Charlie previously issued him.  The server stores these tokens
+      encrypted with his public key, since they are passively generated as part of 
+      conversations.  The server offers an API to Bob's client to "compact" these
+      individually encrypted tokens into a larger object that can be decrypted
+      in one operation.
+    </p>
+
+    <h3>Further Notification</h3>
 
     <p>
       When the inbox server gets such a message for user $B$, it sends some sort of SMS, push,
       or plaintext email to Bob that he has new mail waiting for him. The decision is left to the
       inbox server provider.  However, the provider should not send any
       unencrypted metadata in the push notification, for fear that some passive eavesdropper can 
-      intercept it.
+      intercept it.  The push notification might, however, distinguish between an initial contact
+      and a reply in an ongoing thread.
     </p>
+
+    <h3>Other API Endpoints</h3>
 
     <p>
       Inbox servers should also provide an interface to retrieval, management
@@ -355,7 +448,7 @@
         <li>
           <strong>compact</strong>: replace one set of inbox threads with another. This 
           endpoint allows Bob to optimize future inbox accesses, by combining several
-          encrypted messages into single messages, that can be decrypted in one shot rather
+          encrypted messages into a single message, which can be decrypted in one shot rather
           than $n$.
         </li>
       </ul>

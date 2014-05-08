@@ -90,9 +90,11 @@
       So don't shoot for perfect forward-secret, but here are the goals we do hope to achieve:
 
       <ol>
-        <li><strong>At least a PGP-level of security</strong>. If all parties keep their keys protected, the conversation is secret 
-            and resilient to forgery and impersonation.</li>
-        <li><strong>Resilience to server compromise</strong>. if the server is compromised:
+        <li><strong>At least a PGP-level of security</strong>.
+          If all parties keep their keys protected, the conversation is secret 
+          and resilient to forgery and impersonation.</li>
+        <li><strong>Resilience to server compromise</strong>.
+          If the servers involved with a conversation are compromised:
           <ul>
             <li>Guarantee #1 is still upheld.</li>
             <li>All thread metadata is still secret; the attacker can't discover who was involved in which conversations.</li>
@@ -102,10 +104,27 @@
           messages to other conversants in the conversation.</li>
         <li><strong>Weak repudiation</strong>. If any conversant in the thread has their private key compromised, and if the
          server is compromised, conversations older than a given timeout can still be repudiated.</li>
-        <li><strong>Weak forward secrecy</strong>. If the server is compromised, and if any number of conversants have their
-         keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>  
+        <li><strong>Weak forward secrecy</strong>. If the server is compromised, and if any number of conversants 
+         have their keys compromised, the adversary still cannot recover <em>deleted</em> messages.</li>
       </ol>
     </p>
+
+    <h2>User Experience Requirements</h2>
+
+    We intend the Keybase messaging protocol to be an improvement over e-mail, and to capture
+    most of the positive features of large-centrally managed messaging platforms like Facebook
+    or Twitter, but without the need to trust central servers.  The user experience requirements are:
+
+    <ol>
+      <li>Users can switch clients/machines easily</li>
+      <li>The system works well over spotty internet, or if some clients are offline.
+          When connectivity returns, all missed messages should be retrievable.</li>
+      <li>Strong defenses against spammers and harrassers, but...</li>
+      <li>A user Alice can start a conversation with Bob even if they have never
+      conversed before and don't have a back-channel</li>.
+      <li>Users have choice over any network server involved, whether those
+      involved in moving messages around, or those involved in key distribution.</li>
+    </ol>
 
     <h2>High-Level Design</h2>
 

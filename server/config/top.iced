@@ -1,4 +1,0 @@
-
-exports.configs = [
-  'db', 'host'
-]

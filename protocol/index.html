@@ -85,9 +85,19 @@
       adversaries malliciously exhaust pregenerated keys, and futhermore 
       requires $O(m^2n^2)$ network messages per interaction if there are $m$ conversants with $n$ devices each.
     </p>
+    <p>
+      In our opinion, the best existing model to consider is Adam Langley's
+      <a href="https://pond.imperialviolet.org">Pond</a>, which provide asynchronous
+      PFS across Tor-routed servers.  We think this is a great system, but one that
+      trades off some usability for security.  In particular, Pond does not support:
+      (1) multiple devices for user; (2) the ability for strangers to connect; and (3)
+      somewhat tautologically, the ability to archive messages. We think
+      these usability features are more important than PFS, and we're willing to sacrifice
+      PFS to spur widespread adoption.
+    </p>
 
     <p>
-      So don't shoot for perfect forward-secret, but here are the goals we do hope to achieve:
+      So we don't shoot for perfect forward-secret, but here are the goals we do hope to achieve:
 
       <ol>
         <li><strong>At least a PGP-level of security</strong>.

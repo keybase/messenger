@@ -121,7 +121,7 @@
           When connectivity returns, all missed messages should be retrievable.</li>
       <li>Strong defenses against spammers and harrassers, but...</li>
       <li>A user Alice can start a conversation with Bob even if they have never
-      conversed before and don't have a back-channel</li>.
+      conversed before and don't have a back-channel.</li>
       <li>Users have choice over any network server involved, whether those
       involved in moving messages around, or those involved in key distribution.</li>
     </ol>
@@ -275,11 +275,12 @@
       this before authenticating himself in Step 4.
     </p>
 
-    <h3>Interlude: Channel Encryption</h3>
+    <h3>Interlude: Symmetric Encryption</h3>
 
     <p>
-      Now Alice, Bob and Charlie are ready to communicate over the channel they've established.
-      The do this with AES256-encryption in CTR mode, and authenticated with HMAC-SHA512.
+      Now Alice, Bob and Charlie are ready to store messages on the thread server
+      protected by the keys they share, $k_s$ and $k_m$.
+      For now, we use AES256-encryption in CTR mode, and authenticated with HMAC-SHA512.
       Given keys $k_s$ and $k_m$ and plaintext $p$, define $E_{k_s,k_m}(p)$ as:
       <ul>
         <li>Pick a random nonce $r$</li>

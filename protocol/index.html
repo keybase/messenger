@@ -238,7 +238,7 @@
       message to Bob's inbox server:
 
        \[ 
-         [\textrm{notify}, B, i_B, E_{K_B}(u), p_B, HMAC_{q_B}(i_B) ] 
+         [\textrm{notify}, B, i_B, E_{K_B}(u), p_B, HMAC_{q_B}([B, i_B, E_{K_B}(u)]) ]
        \]
 
       The parameters are:
@@ -385,7 +385,7 @@
     <p>
       To pick up the earlier example, when Alice sends Bob a notification, it's of the form:
        \[ 
-         [\textrm{notify}, B, i_B, E_{K_B}(u), p_B, HMAC_{q_B}(i_B) ] 
+         [\textrm{notify}, B, i_B, E_{K_B}(u), p_B, HMAC_{q_B}([B, i_B, E_{K_B}(u)]) ]
        \]
       Where $B$ is the ID of the user receiving a notification (Bob), $i_B$ is Bob's ID for this
       thread, $u$ is the URL to access
@@ -431,7 +431,7 @@
           <ul>
             <li>Alice generates a Bitcoin keypair: $k_\$, K_\$$.</li>
             <li>Alice "burns" about a US dollar's worth of bitcoin by donating to one of 
-              5 chosen charities  (these charities generate dedicate wallet addresses for receiving
+              5 chosen charities (these charities generate dedicated wallet addresses for receiving
               these donations).</li>
             <li>Alice signs $\sigma_{k_\$}([\mathrm{getPostage}, B])$ and sends the message to
              Bob's inbox server.</li>

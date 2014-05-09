@@ -294,8 +294,8 @@
       Given keys $k_s$ and $k_m$ and plaintext $p$, define $E_{k_s,k_m}(p)$ as:
       <ul>
         <li>Pick a random nonce $r$</li>
-        <li>Generate ciphertext: $c = \mathrm{AES256CTR}_{k_s}(r,p)$</li>
-        <li>Generate MAC: $m = \mathrm{SHA512HMAC}_{k_m}(r,c)$</li>
+        <li>Generate ciphertext: $c = \textrm{AES256-CTR}_{k_s}(r,p)$</li>
+        <li>Generate MAC: $m = \textrm{HMAC-SHA512}_{k_m}(r,c)$</li>
         <li>Output encryption: $[r,c,m]$</li>
       </ul>
     </p>
@@ -433,7 +433,7 @@
             <li>Alice "burns" about a US dollar's worth of bitcoin by donating to one of 
               5 chosen charities (these charities generate dedicated wallet addresses for receiving
               these donations).</li>
-            <li>Alice signs $\sigma_{k_\$}([\mathrm{getPostage}, B])$ and sends the message to
+            <li>Alice signs $\sigma_{k_\$}([\textrm{get-postage}, B])$ and sends the message to
              Bob's inbox server.</li>
             <li>If Bob hasn't previously blacklisted $K_\$$, then he issues Alice a new postage token.</li>
           </ul>

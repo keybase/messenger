@@ -86,7 +86,7 @@
       requires $O(m^2n^2)$ network messages per interaction if there are $m$ conversants with $n$ devices each.
     </p>
     <p>
-      In our opinion, the best existing model to consider is Adam Langley's
+       In our opinion, the best existing model to consider is Adam Langley's
       <a href="https://pond.imperialviolet.org">Pond</a>, which provide asynchronous
       PFS across Tor-routed servers.  We think this is a great system, but one that
       trades off some usability for security.  In particular, Pond does not support:
@@ -429,13 +429,17 @@
         a Sybil attack.  The exact protocol is:
 
           <ul>
+            <li>Bob's inbox server issues Alice a challenge, $R_\$$.
             <li>Alice generates a Bitcoin keypair: $k_\$, K_\$$.</li>
-            <li>Alice "burns" about a US dollar's worth of bitcoin by donating to one of 
-              5 chosen charities (these charities generate dedicated wallet addresses for receiving
+            <li>Alice generates a transaction with at least two receivers:
+              <ol>
+                <li>About one US dollar's worth of bitcoin sent to one of
+              a few chosen charities (these charities generate dedicated wallet addresses for receiving
               these donations).</li>
-            <li>Alice signs $\sigma_{k_\$}([\textrm{get-postage}, B])$ and sends the message to
-             Bob's inbox server.</li>
-            <li>If Bob hasn't previously blacklisted $K_\$$, then he issues Alice a new postage token.</li>
+                <li>A few Satoshi sent to the "dead" bitcoin address $R_\$$.</li>
+              </ol>
+            </li>
+            <li>Once the transaction clears, Bob's inbox server issues Alice a postage token.</li>
           </ul>
         </li>
       </ol>
